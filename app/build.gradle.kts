@@ -64,6 +64,7 @@ android {
         create("github") {
             isDefault = true
             dimension = "channel"
+            applicationIdSuffix = ".personal"
         }
         create("fdroid") { dimension = "channel" }
         create("googlePlay") {
