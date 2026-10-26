@@ -3,6 +3,7 @@ package me.ash.reader.ui.component.webview
 import android.util.Log
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,7 @@ import me.ash.reader.infrastructure.preference.LocalReadingTextLetterSpacing
 import me.ash.reader.infrastructure.preference.LocalReadingTextLineHeight
 import me.ash.reader.infrastructure.preference.ReadingFontsPreference
 import me.ash.reader.ui.ext.ExternalFonts
+import me.ash.reader.ui.ext.findActivity
 import me.ash.reader.ui.ext.openURL
 import me.ash.reader.ui.ext.surfaceColorAtElevation
 import me.ash.reader.ui.theme.palette.alwaysLight
@@ -69,8 +71,11 @@ fun RYWebView(
         MaterialTheme.colorScheme.surfaceColorAtElevation((tonalElevation.value + 6).dp).toArgb()
     val boldCharacters = LocalReadingBoldCharacters.current
 
+    val activity = context.findActivity()
+    val fullscreenWebChromeClient = remember(activity) { FullscreenWebChromeClient(activity) }
+
     val webView by
-        remember(backgroundColor) {
+        remember(backgroundColor, fullscreenWebChromeClient) {
             mutableStateOf(
                 WebViewLayout.get(
                     context = context,
@@ -83,10 +88,17 @@ fun RYWebView(
                                 context.openURL(url, openLink, openLinkSpecificBrowser)
                             },
                         ),
+                    webChromeClient = fullscreenWebChromeClient,
                     onImageClick = onImageClick,
                 )
             )
         }
+
+    DisposableEffect(fullscreenWebChromeClient) {
+        onDispose {
+            fullscreenWebChromeClient.release()
+        }
+    }
 
     val fontPath =
         if (readingFonts is ReadingFontsPreference.External)

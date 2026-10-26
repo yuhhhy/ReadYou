@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import me.ash.reader.infrastructure.preference.ReadingFontsPreference
 
@@ -14,10 +15,12 @@ object WebViewLayout {
         context: Context,
         readingFontsPreference: ReadingFontsPreference,
         webViewClient: WebViewClient,
+        webChromeClient: WebChromeClient,
         onImageClick: ((imgUrl: String, altText: String) -> Unit)? = null,
     ) =
         WebView(context).apply {
             this.webViewClient = webViewClient
+            this.webChromeClient = webChromeClient
             scrollBarSize = 0
             isHorizontalScrollBarEnabled = false
             isVerticalScrollBarEnabled = true
