@@ -3,8 +3,7 @@ package me.ash.reader.ui.component.webview
 import android.util.Log
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +29,7 @@ import me.ash.reader.infrastructure.preference.LocalReadingTextLetterSpacing
 import me.ash.reader.infrastructure.preference.LocalReadingTextLineHeight
 import me.ash.reader.infrastructure.preference.ReadingFontsPreference
 import me.ash.reader.ui.ext.ExternalFonts
+import me.ash.reader.ui.ext.findActivity
 import me.ash.reader.ui.ext.openURL
 import me.ash.reader.ui.ext.surfaceColorAtElevation
 import me.ash.reader.ui.theme.palette.alwaysLight
@@ -69,24 +69,32 @@ fun RYWebView(
         MaterialTheme.colorScheme.surfaceColorAtElevation((tonalElevation.value + 6).dp).toArgb()
     val boldCharacters = LocalReadingBoldCharacters.current
 
-    val webView by
+    val (webView, fullscreenWebChromeClient) =
         remember(backgroundColor) {
-            mutableStateOf(
-                WebViewLayout.get(
-                    context = context,
-                    readingFontsPreference = readingFonts,
-                    webViewClient =
-                        WebViewClient(
-                            context = context,
-                            refererDomain = refererDomain,
-                            onOpenLink = { url ->
-                                context.openURL(url, openLink, openLinkSpecificBrowser)
-                            },
-                        ),
-                    onImageClick = onImageClick,
-                )
-            )
+            val fullscreenWebChromeClient = FullscreenWebChromeClient(context.findActivity())
+            WebViewLayout.get(
+                context = context,
+                readingFontsPreference = readingFonts,
+                webViewClient =
+                    WebViewClient(
+                        context = context,
+                        refererDomain = refererDomain,
+                        onOpenLink = { url ->
+                            context.openURL(url, openLink, openLinkSpecificBrowser)
+                        },
+                    ),
+                webChromeClient = fullscreenWebChromeClient,
+                onImageClick = onImageClick,
+            ) to fullscreenWebChromeClient
         }
+
+    DisposableEffect(webView, fullscreenWebChromeClient) {
+        onDispose {
+            fullscreenWebChromeClient.release()
+            webView.stopLoading()
+            webView.destroy()
+        }
+    }
 
     val fontPath =
         if (readingFonts is ReadingFontsPreference.External)
